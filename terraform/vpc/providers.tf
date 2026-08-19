@@ -10,15 +10,14 @@ terraform {
     endpoints = {
       s3 = "https://storage.yandexcloud.net"
     }
-    bucket = var.bucket_name
-    region = "ru-central1"
-    key    = state/terraform.tfstate"
-
+    region                      = "ru-central1"
+    bucket                      = "hexlet-backend-kimdeun"
+    key                         = "hexlet-remote-state"
+    use_lockfile                = true
     skip_region_validation      = true
     skip_credentials_validation = true
-    skip_requesting_account_id  = true # Необходимая опция Terraform для версии 1.6.1 и старше.
-    skip_s3_checksum            = true # Необходимая опция при описании бэкенда для Terraform версии 1.6.3 и старше.
-
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
   }
 }
 

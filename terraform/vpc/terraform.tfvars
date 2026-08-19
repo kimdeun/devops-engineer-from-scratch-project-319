@@ -8,3 +8,5 @@ subnets = {
     private-d = { zone = "ru-central1-d", cidr = "10.10.13.0/24", public = false }
   }
 folder_id = "b1g5vae6a1pu5uvo07it"
+bucket_name = "hexlet-backend-kimdeun"
+cloud_id = "b1go64chbohn0momgp2e"

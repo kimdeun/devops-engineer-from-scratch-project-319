@@ -17,3 +17,7 @@ variable "folder_id" {
 variable "bucket_name" {
     type = string
 }
+
+variable "cloud_id" {
+    type = string
+}

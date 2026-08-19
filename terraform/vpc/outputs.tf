@@ -18,3 +18,7 @@ output "private_subnet_ids" {
     if !var.subnets[name].public
   }
 }
+output "backend_sg_id" {
+  description = "Backend security group id"
+  value       = yandex_vpc_security_group.backend.id
+}
