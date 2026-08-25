@@ -1,9 +1,9 @@
 resource "yandex_iam_service_account" "service_account_cluster" {
-  name        = "service_account_cluster"
+  name        = "service-account-cluster"
 }
 
 resource "yandex_iam_service_account" "service_account_node" {
-  name        = "service_account_node"
+  name        = "service-account-node"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "service_account_cluster_role" {

@@ -61,10 +61,8 @@ resource "yandex_kubernetes_node_group" "node_group" {
     }
   }
   scale_policy {
-    scale_policy {
-        fixed_scale {
-            size = 1
-        }
+    fixed_scale {
+        size = 1
     }
   }
   deploy_policy {

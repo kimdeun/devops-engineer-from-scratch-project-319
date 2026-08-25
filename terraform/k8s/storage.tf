@@ -28,8 +28,8 @@ resource "yandex_storage_bucket" "test" {
   max_size              = 10000
   default_storage_class = "standard"
   anonymous_access_flags {
-    read        = <true|false>
-    list        = <true|false>
-    config_read = <true|false>
+    read        = true
+    list        = true
+    config_read = true
   }
 }
