@@ -19,16 +19,6 @@ output "data_base_fdqn" {
     value = yandex_mdb_postgresql_cluster.my_cluster.host[0].fqdn
 }
 
-output "storage_access_key" {
-    value = yandex_iam_service_account_static_access_key.sa-static-key.access_key
-    sensitive = true
-}
-
-output "storage_secret_key" {
-    value = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
-    sensitive = true
-}
-
 output "lockbox_secret_id" {
     value = yandex_lockbox_secret.my_secret.id
 }

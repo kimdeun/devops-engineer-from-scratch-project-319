@@ -1,11 +1,10 @@
 resource "yandex_kubernetes_cluster" "zonal_cluster" {
-  name        = "kuber cluster"
+  name        = "kuber-cluster"
   description = "description"
 
   network_id = data.terraform_remote_state.vpc.outputs.vpc_id
 
   master {
-    version = "1.30"
     zonal {
       zone      = "ru-central1-a"
       subnet_id = data.terraform_remote_state.vpc.outputs.private_subnet_ids["private-a"]
@@ -13,7 +12,7 @@ resource "yandex_kubernetes_cluster" "zonal_cluster" {
 
     public_ip = true
 
-    security_group_ids = ["${data.terraform_remote_state.vpc.outputs.backend_sg_id}"]
+    security_group_ids = [yandex_vpc_security_group.k8s_sg.id]
 
     maintenance_policy {
       auto_upgrade = true
@@ -39,7 +38,7 @@ resource "yandex_kubernetes_cluster" "zonal_cluster" {
 
 resource "yandex_kubernetes_node_group" "node_group" {
   cluster_id = yandex_kubernetes_cluster.zonal_cluster.id
-  name       = "node_group"
+  name       = "node-group"
   instance_template {
     platform_id = "standard-v3"
     network_acceleration_type = "standard"
@@ -49,9 +48,9 @@ resource "yandex_kubernetes_node_group" "node_group" {
     network_interface {
       nat = false
       subnet_ids = [data.terraform_remote_state.vpc.outputs.private_subnet_ids["private-a"]]
+      security_group_ids = [yandex_vpc_security_group.k8s_sg.id]
     }
     resources {
-        cores         = 2
         memory        = 4
         core_fraction = 50
     }

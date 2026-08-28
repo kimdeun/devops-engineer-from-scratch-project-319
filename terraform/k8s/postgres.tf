@@ -30,3 +30,8 @@ resource "yandex_mdb_postgresql_cluster" "my_cluster" {
     subnet_id = data.terraform_remote_state.vpc.outputs.private_subnet_ids["private-a"]
   }
 }
+
+resource "yandex_mdb_postgresql_database" "postgres-db" {
+  cluster_id  = yandex_mdb_postgresql_cluster.my_cluster.id
+  name        = "postgres-db"
+}
