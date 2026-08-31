@@ -4,7 +4,7 @@ metadata:
   name: bulletin-board-deployment
   namespace: bulletin-board-prod
 spec:
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -26,17 +26,17 @@ spec:
 
         resources:
           requests:
-            cpu: "500m"
-            memory: "1Gi"
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: "2000m"
-            memory: "8Gi"
+            cpu: "500m"
+            memory: "512Mi"
 
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8080
-          initialDelaySeconds: 15
+            port: 9090
+          initialDelaySeconds: 45
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 3
@@ -44,8 +44,8 @@ spec:
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8080
-          initialDelaySeconds: 5
+            port: 9090
+          initialDelaySeconds: 45
           periodSeconds: 5
           timeoutSeconds: 2
           failureThreshold: 3

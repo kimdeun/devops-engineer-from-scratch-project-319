@@ -3,6 +3,8 @@ resource "yandex_mdb_postgresql_cluster" "my_cluster" {
   environment = "PRESTABLE"
   network_id  = data.terraform_remote_state.vpc.outputs.vpc_id
 
+  security_group_ids = [yandex_vpc_security_group.pg_sg.id]
+
   config {
     version = 15
     resources {
@@ -34,4 +36,5 @@ resource "yandex_mdb_postgresql_cluster" "my_cluster" {
 resource "yandex_mdb_postgresql_database" "postgres-db" {
   cluster_id  = yandex_mdb_postgresql_cluster.my_cluster.id
   name        = "postgres-db"
+  owner       = var.db_login
 }
