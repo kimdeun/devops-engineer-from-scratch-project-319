@@ -1,83 +1,155 @@
-### Hexlet tests and linter status:
-[![Actions Status](https://github.com/kimdeun/devops-engineer-from-scratch-project-319/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/kimdeun/devops-engineer-from-scratch-project-319/actions)
+# Bulletin Board — инфраструктурный проект
 
----
+[![Hexlet check](https://github.com/kimdeun/devops-engineer-from-scratch-project-319/actions/workflows/hexlet-check.yml/badge.svg?branch=main)](https://github.com/kimdeun/devops-engineer-from-scratch-project-319/actions/workflows/hexlet-check.yml)
+[![Infrastructure check](https://github.com/kimdeun/devops-engineer-from-scratch-project-319/actions/workflows/infra-check.yml/badge.svg?branch=main)](https://github.com/kimdeun/devops-engineer-from-scratch-project-319/actions/workflows/infra-check.yml)
 
-## Требования к рабочей системе
+Учебный production-стенд в Yandex Cloud: Managed Kubernetes, Managed PostgreSQL, Object Storage, Network Load Balancer, Yandex Monitoring, Cloud Logging, Lockbox и External Secrets Operator. Приложение разворачивается собственным Helm-чартом.
 
-Для развёртывания инфраструктуры необходимо установить следующие инструменты:
+**Задеплоенное приложение:** [http://130.193.46.109](http://130.193.46.109)
 
-- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.5
-- [Yandex Cloud CLI (yc)](https://yandex.cloud/ru/docs/cli/quickstart) — для получения IAM-токена
-- Доступ к Yandex Cloud с правами на создание ресурсов (Managed Kubernetes, PostgreSQL, Object Storage, Lockbox, VPC)
-- Настроенный S3-бакет для хранения Terraform state (backend)
+## Требования
 
----
+- Terraform `1.15.8` или совместимая версия;
+- Yandex Cloud CLI (`yc`) и выбранные `cloud-id`/`folder-id`;
+- service account или пользователь с правами на VPC, Managed Kubernetes, Managed PostgreSQL, Object Storage, Load Balancer, Monitoring, Logging, IAM и Lockbox;
+- `kubectl` с контекстом созданного Managed Kubernetes;
+- Helm 4;
+- Docker и доступ к Docker Hub для чтения образа `123c/hexlet`;
+- S3-бакет и static access key для удалённого Terraform state;
+- `make`, `curl` и `jq` для команд и диагностических проверок.
+
+Локальные файлы `secret*.tfvars`, JSON-ключи service accounts, kubeconfig и другие credentials не должны попадать в Git.
+
+## Структура
+
+```text
+.
+├── .github/workflows/     # Hexlet check, инфраструктурный CI и ручной deploy
+├── docs/                  # Helm, observability, Lockbox и debugging
+├── k8s/
+│   ├── bulletin-board/    # Helm-чарт приложения
+│   └── external-secrets/  # ClusterSecretStore без credentials
+├── output/pdf/            # Итоговая PDF-шпаргалка
+├── terraform/
+│   ├── vpc/               # VPC, подсети, NAT и security groups
+│   └── k8s/               # Kubernetes, node group, PostgreSQL, IAM, Lockbox и logging
+├── Makefile
+└── README.md
+```
 
 ## Авторизация
 
-Перед запуском Terraform необходимо экспортировать переменные окружения:
+Перед Terraform-командами получите краткоживущий IAM-токен:
 
 ```bash
-export YC_TOKEN=$(yc iam create-token)
-export YC_CLOUD_ID=$(yc config get cloud-id)
-export YC_FOLDER_ID=$(yc config get folder-id)
+export YC_TOKEN="$(yc iam create-token)"
+export YC_CLOUD_ID="$(yc config get cloud-id)"
+export YC_FOLDER_ID="$(yc config get folder-id)"
 ```
 
----
+Приватные tfvars создаются локально и игнорируются Git:
 
-## Структура проекта
+- `terraform/vpc/secret.backend.tfvars`;
+- `terraform/k8s/secret.backend.tfvars`;
+- `terraform/k8s/secrets.postgres.tfvars`.
 
-```
-terraform/
-├── vpc/        # Сеть: VPC, подсети, NAT, security groups
-└── k8s/        # Кластер: Kubernetes, PostgreSQL, S3, Lockbox, IAM
-```
+## Создание инфраструктуры
 
----
-
-## Команды Makefile
-
-### Инициализация и деплой VPC
+Сначала создаётся сеть, затем кластер и зависимые сервисы:
 
 ```bash
-make vpc-init    # Инициализация Terraform (VPC)
-make vpc-plan    # Просмотр плана изменений (VPC)
-make vpc-apply   # Применение изменений (VPC)
-make vpc-destroy # Удаление ресурсов (VPC)
+make vpc-init
+make vpc-plan
+make vpc-apply
+
+make k8s-init
+make k8s-plan
+make k8s-apply
 ```
 
-### Инициализация и деплой K8S + БД + S3 + Lockbox
+Перед `apply` обязательно изучите plan. Команда намеренно запрашивает подтверждение и не содержит `-auto-approve`.
+
+Получить outputs:
 
 ```bash
-make k8s-init    # Инициализация Terraform (K8S)
-make k8s-plan    # Просмотр плана изменений (K8S)
-make k8s-apply   # Применение изменений (K8S)
-make k8s-destroy # Удаление ресурсов (K8S)
-make k8s-output  # Показать outputs (endpoint, ключи S3, ID Lockbox и т.д.)
+make k8s-output
 ```
 
-### Порядок развёртывания
+## Подготовка и деплой приложения
 
-1. Сначала создать сеть:
-   ```bash
-   make vpc-init && make vpc-apply
-   ```
+Подключить Helm-репозитории:
 
-2. Затем создать кластер и остальные ресурсы:
-   ```bash
-   make k8s-init && make k8s-apply
-   ```
+```bash
+make app-prepare
+```
 
-3. Посмотреть outputs:
-   ```bash
-   make k8s-output
-   ```
+Установить External Secrets Operator и применить `ClusterSecretStore` согласно [инструкции Lockbox](docs/external-secrets-lockbox.md).
 
----
+Проверить чарт без изменений в кластере:
 
-## Важно
+```bash
+make helm-lint
+make helm-template
+make helm-dry-run
+```
 
-- Не храните `terraform.tfstate` в репозитории — используйте S3-бэкенд.
-- Файлы `secret.backend.tfvars` добавлены в `.gitignore` и не попадают в репозиторий.
-- Чувствительные данные (ключи S3, токены) хранятся в Yandex Lockbox.
+Установить или обновить приложение:
+
+```bash
+make app-deploy
+```
+
+Провести rolling update конкретного immutable image tag:
+
+```bash
+make helm-deploy-image IMAGE_TAG=sha-6f6ba28
+```
+
+Проверить результат:
+
+```bash
+make app-status
+kubectl rollout status deployment/bulletin-board-deployment \
+  -n bulletin-board-prod --timeout=5m
+curl --fail --show-error http://130.193.46.109/
+```
+
+История и откат:
+
+```bash
+make helm-history
+make helm-rollback REVISION=1
+```
+
+Подробнее: [релизы Helm и rollback](docs/helm-deployment.md).
+
+## Масштабирование и zero-downtime
+
+- node group содержит минимум две рабочие ноды;
+- приложение запускается в двух репликах и распределяется по разным hostname через `topologySpreadConstraints`;
+- RollingUpdate использует `maxUnavailable: 0` и `maxSurge: 1`;
+- readiness/liveness probes исключают неготовые Pod из трафика;
+- PodDisruptionBudget сохраняет минимум одну доступную реплику;
+- Helm ждёт готовности и выполняет rollback при ошибке обновления.
+
+Проверенный процесс и результаты описаны в [отчёте Helm](docs/helm-assignment-report.md) и [сетевой шпаргалке](docs/kubernetes-network-debugging.md).
+
+## Мониторинг и логи
+
+Prometheus Operator собирает CPU, память, количество Pod и application latency. Метрики отправляются в Yandex Monitoring; Fluent Bit доставляет логи Pod в Cloud Logging. Настроены алерты по 5xx, latency, недоступным репликам и restart.
+
+Как открыть Grafana/Yandex Monitoring, какие запросы и фильтры используются: [observability.md](docs/observability.md).
+
+## Секреты
+
+Production credentials хранятся в Yandex Lockbox. External Secrets Operator раз в минуту синхронизирует их в `app-secret`; в Helm values находится только Lockbox ID. Service account имеет `lockbox.payloadViewer` только на нужный секрет.
+
+Проверенная ротация `Lockbox version → Kubernetes Secret` и порядок rolling restart описаны в [external-secrets-lockbox.md](docs/external-secrets-lockbox.md).
+
+## CI/CD
+
+- `hexlet-check.yml` — обязательная проверка Hexlet на каждый push;
+- `infra-check.yml` — `terraform fmt`, `terraform init -backend=false`, `terraform validate` и `helm lint`;
+- `deploy.yml` — ручной production deploy по immutable image tag с защищёнными GitHub Environment secrets.
+
+Для deploy workflow нужны `YC_SA_JSON_CREDENTIALS`, `K8S_ENDPOINT` и `K8S_CA_CERT_B64`. Порядок настройки описан в [документации Helm](docs/helm-deployment.md#cicd).

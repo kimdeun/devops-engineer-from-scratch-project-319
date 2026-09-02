@@ -1,0 +1,45 @@
+name: infrastructure-check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.8
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive terraform
+
+      - name: Initialize VPC configuration without backend
+        run: terraform -chdir=terraform/vpc init -backend=false -input=false
+
+      - name: Validate VPC configuration
+        run: terraform -chdir=terraform/vpc validate
+
+      - name: Initialize Kubernetes configuration without backend
+        run: terraform -chdir=terraform/k8s init -backend=false -input=false
+
+      - name: Validate Kubernetes configuration
+        run: terraform -chdir=terraform/k8s validate
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint Helm chart
+        run: |
+          helm lint k8s/bulletin-board
+          helm lint k8s/bulletin-board --values k8s/bulletin-board/values-prod.yaml

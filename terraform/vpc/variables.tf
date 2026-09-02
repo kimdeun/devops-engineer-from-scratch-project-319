@@ -1,5 +1,5 @@
 variable "vpc_name" {
-    type = string
+  type = string
 }
 
 variable "subnets" {
@@ -11,13 +11,13 @@ variable "subnets" {
 }
 
 variable "folder_id" {
-    type = string
+  type = string
 }
 
 variable "bucket_name" {
-    type = string
+  type = string
 }
 
 variable "cloud_id" {
-    type = string
+  type = string
 }

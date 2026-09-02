@@ -1,11 +1,11 @@
 resource "yandex_vpc_gateway" "nat_gateway" {
-  folder_id      = var.folder_id
-  name = "test-gateway"
+  folder_id = var.folder_id
+  name      = "test-gateway"
   shared_egress_gateway {}
 }
 
 resource "yandex_vpc_route_table" "nat" {
-  folder_id      = var.folder_id
+  folder_id  = var.folder_id
   name       = "test-route-table"
   network_id = yandex_vpc_network.main.id
 

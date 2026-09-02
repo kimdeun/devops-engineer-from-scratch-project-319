@@ -4,7 +4,7 @@ resource "yandex_vpc_network" "main" {
 }
 
 resource "yandex_vpc_subnet" "main" {
-  for_each = var.subnets
+  for_each       = var.subnets
   name           = each.key
   zone           = each.value.zone
   network_id     = yandex_vpc_network.main.id
