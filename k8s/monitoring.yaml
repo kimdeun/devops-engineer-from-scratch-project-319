@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bulletin-board-metrics
+  namespace: bulletin-board-prod
+  labels:
+    app: bulletin-board
+spec:
+  type: ClusterIP
+  selector:
+    app: bulletin-board
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: bulletin-board
+  namespace: bulletin-board-prod
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - bulletin-board-prod
+  selector:
+    matchLabels:
+      app: bulletin-board
+  endpoints:
+    - port: metrics
+      path: /actuator/prometheus
+      scheme: http
+      interval: 30s
+      scrapeTimeout: 10s

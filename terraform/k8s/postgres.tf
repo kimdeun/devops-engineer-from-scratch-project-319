@@ -33,8 +33,14 @@ resource "yandex_mdb_postgresql_cluster" "my_cluster" {
   }
 }
 
+resource "yandex_mdb_postgresql_user" "postgres-user" {
+  cluster_id = yandex_mdb_postgresql_cluster.my_cluster.id
+  name       = var.db_login
+  password   = var.db_password
+}
+
 resource "yandex_mdb_postgresql_database" "postgres-db" {
-  cluster_id  = yandex_mdb_postgresql_cluster.my_cluster.id
-  name        = "postgres-db"
-  owner       = var.db_login
+  cluster_id = yandex_mdb_postgresql_cluster.my_cluster.id
+  name       = "postgres-db"
+  owner      = var.db_login
 }

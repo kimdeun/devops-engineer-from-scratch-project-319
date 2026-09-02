@@ -1,0 +1,46 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: bulletin-board-alerts
+  namespace: bulletin-board-prod
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: bulletin-board.availability
+      rules:
+        - alert: BulletinBoardTargetDown
+          expr: up{job="bulletin-board-metrics"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Bulletin Board metrics target is unavailable
+            description: Prometheus cannot scrape {{ $labels.instance }} for more than two minutes.
+
+        - alert: BulletinBoard5xxErrors
+          expr: sum(increase(http_server_requests_seconds_count{job="bulletin-board-metrics",status=~"5.."}[5m])) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: Bulletin Board returns HTTP 5xx responses
+            description: At least one HTTP 5xx response was observed during the last five minutes.
+
+        - alert: BulletinBoardHighLatency
+          expr: sum(rate(http_server_requests_seconds_sum{job="bulletin-board-metrics"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job="bulletin-board-metrics"}[5m])), 0.000001) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Bulletin Board average latency is high
+            description: Average HTTP latency has exceeded 500 ms for five minutes.
+
+        - alert: BulletinBoardPodRestarts
+          expr: sum(increase(kube_pod_container_status_restarts_total{namespace="bulletin-board-prod",pod=~"bulletin-board-deployment-.*"}[10m])) > 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Bulletin Board pod restarted
+            description: At least one application container restart was observed during the last ten minutes.

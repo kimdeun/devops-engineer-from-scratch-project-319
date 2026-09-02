@@ -4,12 +4,12 @@ metadata:
   name: bulletin-board-deployment
   namespace: bulletin-board-prod
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: bulletin-board
@@ -18,9 +18,18 @@ spec:
       labels:
         app: bulletin-board
     spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        minDomains: 2
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: bulletin-board
+
       containers:
       - name: bulletin-board
-        image: 123c/hexlet:latest
+        image: 123c/hexlet:sha-7ba412a
         ports:
         - containerPort: 8080
 

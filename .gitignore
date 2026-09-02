@@ -1,3 +1,5 @@
 secret*
 .terraform
 .terraform.lock.hcl
+*.log
+tmp/

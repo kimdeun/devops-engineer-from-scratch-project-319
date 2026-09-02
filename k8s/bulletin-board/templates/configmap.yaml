@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.names.configMap }}
+  labels:
+    {{- include "bulletin-board.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ required (printf "config.%s must be set" $key) $value | quote }}
+  {{- end }}

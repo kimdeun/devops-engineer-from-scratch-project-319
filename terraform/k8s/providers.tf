@@ -22,14 +22,14 @@ terraform {
 }
 
 provider "yandex" {
-  zone = "ru-central1-a"
+  zone      = "ru-central1-a"
   folder_id = var.folder_id
 }
 
 
 data "terraform_remote_state" "vpc" {
   backend = "s3"
-  config  = {
+  config = {
     endpoints = {
       s3 = "https://storage.yandexcloud.net"
     }
@@ -41,5 +41,8 @@ data "terraform_remote_state" "vpc" {
     skip_credentials_validation = true
     skip_requesting_account_id  = true # Необходимая опция при описании бэкенда для Terraform версии старше 1.6.1.
     skip_s3_checksum            = true
-   }
- }
+
+    access_key = var.access_key
+    secret_key = var.secret_key
+  }
+}

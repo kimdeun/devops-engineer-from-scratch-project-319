@@ -1,0 +1,41 @@
+replicaCount: 2
+
+image:
+  repository: 123c/hexlet
+  tag: sha-7ba412a
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8080
+  nodePort: 30080
+
+config:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://rc1a-3gm7be5l0ehi2vn6.mdb.yandexcloud.net:6432/postgres-db
+  MANAGEMENT_SERVER_PORT: "9090"
+  SPRING_PROFILES_ACTIVE: prod
+  STORAGE_S3_REGION: ru-central1
+  STORAGE_S3_BUCKET: hexlet-backend-kimdeun
+  STORAGE_S3_ENDPOINT: https://storage.yandexcloud.net
+
+secret:
+  create: false
+
+externalSecret:
+  enabled: true
+  refreshInterval: 1m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: yandex-lockbox
+  remoteRef:
+    secretId: e6qoe6sh3eh9m15mh09m
+  # Merge provides a zero-downtime migration for the pre-existing app-secret.
+  # ESO manages the listed keys while Kubernetes keeps the Secret object.
+  creationPolicy: Merge
+
+topologySpread:
+  enabled: true
+
+ingress:
+  enabled: false

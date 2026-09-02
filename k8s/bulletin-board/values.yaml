@@ -1,0 +1,102 @@
+replicaCount: 1
+
+image:
+  repository: 123c/hexlet
+  tag: sha-7ba412a
+  pullPolicy: IfNotPresent
+
+names:
+  deployment: bulletin-board-deployment
+  service: backend-service
+  configMap: app-config
+  secret: app-secret
+  pdb: pdb
+  metricsService: bulletin-board-metrics
+  serviceMonitor: bulletin-board
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  nodePort: null
+
+containerPorts:
+  application: 8080
+  management: 9090
+
+config:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bulletin_board
+  MANAGEMENT_SERVER_PORT: "9090"
+  SPRING_PROFILES_ACTIVE: dev
+  STORAGE_S3_REGION: ru-central1
+  STORAGE_S3_BUCKET: bulletin-board-dev
+  STORAGE_S3_ENDPOINT: https://storage.yandexcloud.net
+
+secret:
+  create: false
+  stringData: {}
+
+externalSecret:
+  enabled: false
+  refreshInterval: 1m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: yandex-lockbox
+  remoteRef:
+    secretId: ""
+  creationPolicy: Owner
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    path: /actuator/health/liveness
+    initialDelaySeconds: 45
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /actuator/health/readiness
+    initialDelaySeconds: 45
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+strategy:
+  maxSurge: 1
+  maxUnavailable: 0
+
+topologySpread:
+  enabled: false
+  maxSkew: 1
+  minDomains: 2
+  whenUnsatisfiable: DoNotSchedule
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+monitoring:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /actuator/prometheus
+  serviceMonitorLabels:
+    release: prometheus
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: bulletin-board.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []

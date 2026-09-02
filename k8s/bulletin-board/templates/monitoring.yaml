@@ -1,0 +1,39 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.names.metricsService }}
+  labels:
+    {{- include "bulletin-board.labels" . | nindent 4 }}
+    {{- include "bulletin-board.selectorLabels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "bulletin-board.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: {{ .Values.containerPorts.management }}
+      targetPort: management
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.names.serviceMonitor }}
+  labels:
+    {{- include "bulletin-board.labels" . | nindent 4 }}
+    {{- toYaml .Values.monitoring.serviceMonitorLabels | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "bulletin-board.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: metrics
+      path: {{ .Values.monitoring.path }}
+      scheme: http
+      interval: {{ .Values.monitoring.interval }}
+      scrapeTimeout: {{ .Values.monitoring.scrapeTimeout }}
+{{- end }}

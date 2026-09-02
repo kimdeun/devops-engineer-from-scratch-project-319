@@ -1,0 +1,14 @@
+Bulletin Board release {{ .Release.Name }} is installed in namespace {{ .Release.Namespace }}.
+
+Check rollout:
+  kubectl rollout status deployment/{{ .Values.names.deployment }} -n {{ .Release.Namespace }} --timeout=5m
+
+{{- if eq .Values.service.type "LoadBalancer" }}
+Get the public address:
+  kubectl get service {{ .Values.names.service }} -n {{ .Release.Namespace }}
+{{- end }}
+
+{{- if .Values.externalSecret.enabled }}
+Check Lockbox synchronization:
+  kubectl get externalsecret {{ .Release.Name }} -n {{ .Release.Namespace }}
+{{- end }}

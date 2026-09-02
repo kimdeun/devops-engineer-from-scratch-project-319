@@ -8,3 +8,5 @@ data:
   MANAGEMENT_SERVER_PORT: "9090"
   SPRING_PROFILES_ACTIVE: "prod"
   STORAGE_S3_REGION: "ru-central1"
+  STORAGE_S3_BUCKET: "hexlet-backend-kimdeun"
+  STORAGE_S3_ENDPOINT: "https://storage.yandexcloud.net"

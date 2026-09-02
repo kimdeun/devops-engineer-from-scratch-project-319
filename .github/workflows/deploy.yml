@@ -1,0 +1,70 @@
+name: Deploy application with Helm
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Docker image tag, for example sha-6f6ba28
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bulletin-board-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Get a short-lived Yandex Cloud IAM token
+        id: iam-token
+        uses: yc-actions/yc-iam-token@v1
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+      - name: Configure kubectl
+        env:
+          K8S_ENDPOINT: ${{ secrets.K8S_ENDPOINT }}
+          K8S_CA_CERT_B64: ${{ secrets.K8S_CA_CERT_B64 }}
+          YC_IAM_TOKEN: ${{ steps.iam-token.outputs.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/kube"
+          printf '%s' "$K8S_CA_CERT_B64" | base64 --decode > "$RUNNER_TEMP/kube/ca.pem"
+          kubectl config set-cluster yandex \
+            --server="$K8S_ENDPOINT" \
+            --certificate-authority="$RUNNER_TEMP/kube/ca.pem" \
+            --embed-certs=true
+          kubectl config set-credentials helm-ci --token="$YC_IAM_TOKEN"
+          kubectl config set-context helm-ci \
+            --cluster=yandex \
+            --user=helm-ci \
+            --namespace=bulletin-board-prod
+          kubectl config use-context helm-ci
+
+      - name: Validate chart
+        run: helm lint k8s/bulletin-board --values k8s/bulletin-board/values-prod.yaml
+
+      - name: Deploy and wait for rollout
+        run: |
+          helm upgrade --install bulletin-board k8s/bulletin-board \
+            --namespace bulletin-board-prod \
+            --create-namespace \
+            --values k8s/bulletin-board/values-prod.yaml \
+            --set-string image.tag='${{ inputs.image_tag }}' \
+            --wait \
+            --timeout 5m \
+            --rollback-on-failure
+
+      - name: Show release status
+        if: always()
+        run: helm status bulletin-board --namespace bulletin-board-prod || true

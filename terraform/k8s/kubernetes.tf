@@ -40,28 +40,28 @@ resource "yandex_kubernetes_node_group" "node_group" {
   cluster_id = yandex_kubernetes_cluster.zonal_cluster.id
   name       = "node-group"
   instance_template {
-    platform_id = "standard-v3"
+    platform_id               = "standard-v3"
     network_acceleration_type = "standard"
     container_runtime {
       type = "containerd"
     }
     network_interface {
-      nat = false
-      subnet_ids = [data.terraform_remote_state.vpc.outputs.private_subnet_ids["private-a"]]
+      nat                = false
+      subnet_ids         = [data.terraform_remote_state.vpc.outputs.private_subnet_ids["private-a"]]
       security_group_ids = [yandex_vpc_security_group.k8s_sg.id]
     }
     resources {
-        memory        = 4
-        core_fraction = 50
+      memory        = 4
+      core_fraction = 50
     }
     boot_disk {
-        type = "network-hdd"
-        size = 64
+      type = "network-hdd"
+      size = 64
     }
   }
   scale_policy {
     fixed_scale {
-        size = 1
+      size = 2
     }
   }
   deploy_policy {
